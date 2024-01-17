@@ -27,6 +27,7 @@ Inclusao NFE
 /*/
 
 User Function PayTra04(oParse)
+
 	Local oJsonRet := JsonObject():New()
 	Local cErro  := ""
 	Local nOpc   := 3
@@ -52,19 +53,19 @@ User Function PayTra04(oParse)
 
 	FWJsonDeserialize(DecodeUtf8(cJson),@oParseJSON)
 
-	if      !AttIsMemberOf(oParseJSON,"DOCUMENTO")       	
+	if      !AttIsMemberOf(oParseJSON,"DOCUMENTO")
 		lError   := .T.
 		cMessage := 'Atributo DOCUMENTO nao informado no corpo da requisicao'
-	elseif  !AttIsMemberOf(oParseJSON,"SERIE")       	
+	elseif  !AttIsMemberOf(oParseJSON,"SERIE")
 		lError   := .T.
 		cMessage := 'Atributo SERIE nao informado no corpo da requisicao'
-	elseIf !AttIsMemberOf(oParseJSON,"FORNECEDOR")	
+	elseIf !AttIsMemberOf(oParseJSON,"FORNECEDOR")
 		lError   := .T.
 		cMessage := 'Atributo FORNECEDOR nao informado no corpo da requisicao'
-	elseIf !AttIsMemberOf(oParseJSON,"EMISSAO")	
+	elseIf !AttIsMemberOf(oParseJSON,"EMISSAO")
 		lError   := .T.
 		cMessage := 'Atributo EMISSAO nao informado no corpo da requisicao'
-	elseIf !AttIsMemberOf(oParseJSON,"ESPECIE")	
+	elseIf !AttIsMemberOf(oParseJSON,"ESPECIE")
 		lError   := .T.
 		cMessage := 'Atributo ESPECIE nao informado no corpo da requisicao'
 	endif
@@ -195,10 +196,10 @@ User Function PayTra04(oParse)
 							dbSelectArea("SB1")
 							dbSetOrder(1)
 							If SB1->(dbSeek( xFilial( "SB1" )+SC7->C7_PRODUTO))
-
+								cTes := SuperGetMv("ES_WSPAY02",.F.,"") //GetMv('ES_WSPAY02')
 								aadd(aItens,{"D1_UM"      ,SB1->B1_UM,NIL})
 								aadd(aItens,{"D1_LOCAL"   ,SB1->B1_LOCPAD,NIL})
-								aadd(aItens,{"D1_TES"     ,GetMv('ES_WSPAY02'),NIL})
+								aadd(aItens,{"D1_TES"     ,_cTes,NIL})
 
 							endIf
 							aAdd(aLinha,aItens)
@@ -227,10 +228,10 @@ User Function PayTra04(oParse)
 						dbSelectArea("SB1")
 						dbSetOrder(1)
 						If SB1->(dbSeek( xFilial( "SB1" )+SC7->C7_PRODUTO))
-
+							cTes := SuperGetMv("ES_WSPAY02",.F.,"") //GetMv('ES_WSPAY02')
 							aadd(aItens,{"D1_UM"      ,SB1->B1_UM,NIL})
 							aadd(aItens,{"D1_LOCAL"   ,SB1->B1_LOCPAD,NIL})
-							aadd(aItens,{"D1_TES"     ,GetMv('ES_WSPAY02'),NIL})
+							aadd(aItens,{"D1_TES"     ,cTes,NIL})
 
 						endIf
 
@@ -273,11 +274,11 @@ User Function PayTra04(oParse)
 					U_pFwLog("ERROR","PayTra04",'[PAYTRACK][NFREEMBOLSO][ERROR] - '+cMessage)
 					Return oJsonRet
 				else
-
+					cTes := SuperGetMv("ES_WSPAY02",.F.,"") //GetMv('ES_WSPAY02')
 					aadd(aItens,{"D1_COD"     ,SB1->B1_COD,NIL})
 					aadd(aItens,{"D1_UM"      ,SB1->B1_UM,NIL})
 					aadd(aItens,{"D1_LOCAL"   ,SB1->B1_LOCPAD,NIL})
-					aadd(aItens,{"D1_TES"     ,GetMv('ES_WSPAY02'),NIL})
+					aadd(aItens,{"D1_TES"     ,cTes,NIL})
 
 				endIf
 
@@ -371,7 +372,6 @@ User Function PayTra04(oParse)
 					aEval(aMsg,{ |x| cErro += x + CRLF })
 					oJsonRet['STATUS'] := .F.
 					oJsonRet['WARN']   := U_pTrataErro(cErro)
-					Return oJsonRet
 				Else
 					oJsonRet['STATUS']           := .T.
 					oJsonRet['PRE_NOTA'] := JsonObject():New()
@@ -379,6 +379,10 @@ User Function PayTra04(oParse)
 				EndIf
 			END SEQUENCE
 		END TRANSACTION
+
+		If lMsErroAuto
+			Return oJsonRet //RQG
+		Endif
 
 		ErrorBlock(bError)
 
